@@ -81,7 +81,7 @@ export default function SearchScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.sortList}
-        style={styles.sortScroll}   // ← thêm style này
+        style={styles.sortScroll}
       >
         {SORTS.map((item) => (
           <TouchableOpacity

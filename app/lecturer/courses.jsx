@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,23 +12,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Platform,
+  UIManager
 } from 'react-native';
 import { lecturerApi } from '@/api/courseApi';
 import { Button, EmptyState } from '@/components/ui';
 import { COLORS, RADIUS, SPACING } from '@/constants/theme';
+import CourseCard from './editor/CourseCard'; // Nạp Component thẻ khóa học vào đây
 
-const STATUS_COLOR = {
-  DRAFT: COLORS.textMuted,
-  PUBLISHED: COLORS.success,
-  UNPUBLISHED: COLORS.warning,
-  ARCHIVED: COLORS.danger,
-};
-const STATUS_LABEL = {
-  DRAFT: 'Bản nháp',
-  PUBLISHED: 'Đã xuất bản',
-  UNPUBLISHED: 'Chưa xuất bản',
-  ARCHIVED: 'Lưu trữ',
-};
+// Bật LayoutAnimation cho Android để có hiệu ứng chuyển động mượt mà
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function LecturerCoursesScreen() {
   const router = useRouter();
@@ -47,7 +42,11 @@ export default function LecturerCoursesScreen() {
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
-  useEffect(() => { void fetchCourses(); }, [fetchCourses]);
+  useFocusEffect(
+    useCallback(() => {
+      void fetchCourses();
+    }, [fetchCourses])
+  );
 
   const handleCreate = async () => {
     if (!newTitle.trim()) { Alert.alert('Thiếu tiêu đề', 'Nhập tiêu đề khoá học'); return; }
@@ -86,56 +85,6 @@ export default function LecturerCoursesScreen() {
     ]);
   };
 
-  const renderItem = ({ item }) => {
-    const sc = STATUS_COLOR[item.status ?? ''] ?? COLORS.textMuted;
-    return (
-      <View style={styles.card}>
-        <View style={styles.cardTop}>
-          <View style={[styles.statusDot, { backgroundColor: sc }]} />
-          <Text style={[styles.statusLabel, { color: sc }]}>
-            {STATUS_LABEL[item.status ?? ''] ?? item.status}
-          </Text>
-          <View style={{ flex: 1 }} />
-          <Text style={styles.unitCount}>{item.unit_count ?? 0} chương</Text>
-        </View>
-        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-        <View style={styles.metaRow}>
-          {[
-            { icon: 'people-outline', text: `${item.student_count} học viên` },
-            { icon: 'star-outline', text: item.rating_score > 0 ? item.rating_score.toFixed(1) : '--', color: COLORS.accent },
-          ].map((m) => (
-            <View key={m.icon} style={styles.metaItem}>
-              <Ionicons name={m.icon} size={12} color={m.color ?? COLORS.textSecondary} />
-              <Text style={styles.metaText}>{m.text}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.actionBtn}
-            onPress={() => router.push(`/lecturer/editor/${item.courseGroupId}`)}
-          >
-            <Ionicons name="create-outline" size={15} color={COLORS.primary} />
-            <Text style={[styles.actionText, { color: COLORS.primary }]}>Chỉnh sửa</Text>
-          </TouchableOpacity>
-
-          {item.status === 'DRAFT' && (
-            <TouchableOpacity style={styles.actionBtn} onPress={() => handlePublish(item.courseGroupId)}>
-              <Ionicons name="cloud-upload-outline" size={15} color={COLORS.success} />
-              <Text style={[styles.actionText, { color: COLORS.success }]}>Xuất bản</Text>
-            </TouchableOpacity>
-          )}
-          {item.status === 'PUBLISHED' && (
-            <TouchableOpacity style={styles.actionBtn} onPress={() => handleUnpublish(item.courseGroupId)}>
-              <Ionicons name="eye-off-outline" size={15} color={COLORS.warning} />
-              <Text style={[styles.actionText, { color: COLORS.warning }]}>Huỷ xuất bản</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    );
-  };
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -154,7 +103,7 @@ export default function LecturerCoursesScreen() {
         <Text style={styles.headerSub}>{courses.length} khoá học</Text>
       </LinearGradient>
 
-      {/* Create panel */}
+      {/* Khung Tạo khóa học */}
       {showCreate ? (
         <View style={styles.createPanel}>
           <Text style={styles.createTitle}>Tạo khoá học mới</Text>
@@ -178,10 +127,22 @@ export default function LecturerCoursesScreen() {
         </TouchableOpacity>
       )}
 
+      {/* Danh sách khóa học */}
       <FlatList
         data={courses}
-        keyExtractor={(item) => item.courseGroupId}
-        renderItem={renderItem}
+        keyExtractor={(item, index) => {
+          const id = item.courseGroupId || item._id || 'course';
+          return `${id}-${index}`; 
+        }}
+        renderItem={({ item }) => (
+          <CourseCard 
+            item={item} 
+            router={router}
+            fetchCourses={fetchCourses}
+            handlePublish={handlePublish}
+            handleUnpublish={handleUnpublish}
+          />
+        )}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void fetchCourses(); }} tintColor={COLORS.primary} />
         }
@@ -218,27 +179,4 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary, fontSize: 15, marginBottom: SPACING.sm,
   },
   createActions: { flexDirection: 'row', gap: SPACING.sm },
-  card: {
-    backgroundColor: COLORS.surface, borderRadius: RADIUS.md,
-    padding: SPACING.md, marginBottom: SPACING.sm,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.15, shadowRadius: 3, elevation: 2,
-  },
-  cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.sm },
-  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 6 },
-  statusLabel: { fontSize: 11, fontWeight: '600' },
-  unitCount: { color: COLORS.textMuted, fontSize: 11 },
-  cardTitle: { color: COLORS.textPrimary, fontSize: 15, fontWeight: '700', marginBottom: SPACING.sm },
-  metaRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.sm },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  metaText: { color: COLORS.textSecondary, fontSize: 11 },
-  actionsRow: {
-    flexDirection: 'row', gap: SPACING.sm,
-    borderTopWidth: 1, borderTopColor: COLORS.border, paddingTop: SPACING.sm,
-  },
-  actionBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    paddingHorizontal: SPACING.sm, paddingVertical: 6,
-    borderRadius: RADIUS.sm, backgroundColor: COLORS.background,
-  },
-  actionText: { fontSize: 11, fontWeight: '600' },
 });

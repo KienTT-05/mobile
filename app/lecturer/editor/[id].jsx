@@ -58,13 +58,16 @@ export default function CourseEditorScreen() {
     if (!title.trim()) { Alert.alert('Thiếu tiêu đề', 'Vui lòng nhập tiêu đề'); return; }
     setSaving(true);
     try {
-      await lecturerApi.updateDraft(id, {
+    await lecturerApi.updateDraft(id, {
         title: title.trim(),
         description: description.trim(),
         tags: tags.trim(),
         price: parseInt(price, 10) || 0,
       });
-      Alert.alert('✅ Đã lưu', 'Bản nháp đã được cập nhật!');
+      // Thêm nút OK và sự kiện chuyển trang
+      Alert.alert('✅ Đã lưu', 'Bản nháp đã được cập nhật!', [
+        { text: 'OK', onPress: () => router.back() }
+      ]);
     } catch (e) {
       Alert.alert('Lỗi', e?.response?.data?.message ?? 'Lưu thất bại');
     } finally { setSaving(false); }
