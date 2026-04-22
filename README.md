@@ -79,38 +79,3 @@ StudyHubExpo/
 └── utils/
     └── formatPrice.ts           ← formatPrice, effectivePrice
 ```
-
----
-
-## 🔗 API Mapping
-
-| Screen | Method | Endpoint |
-|---|---|---|
-| login.tsx | POST | `/login` |
-| register.tsx | POST | `/register` |
-| verify.tsx | POST | `/register/verify-email` |
-| (tabs)/index.tsx | GET | `/student/home` |
-| search.tsx | GET | `/courses/search` |
-| course/[id].tsx | GET | `/courses/{id}/detail` |
-| player/[id].tsx | GET | `/student/courses/{id}/learn` |
-| player/[id].tsx | POST | `/student/courses/{id}/progress` |
-| (tabs)/courses.tsx | GET | `/student/my-courses` |
-| course/[id].tsx | POST | `/student/enroll/{id}` |
-| checkout/[id].tsx | POST | `/student/courses/{id}/checkout` |
-| lecturer/statistics.tsx | GET | `/lecturer/statistics` |
-| lecturer/courses.tsx | GET/POST | `/lecturer/courses` |
-| lecturer/editor/[id].tsx | GET/PUT | `/lecturer/courses/{id}/draft` |
-| lecturer/editor/[id].tsx | POST | `/lecturer/courses/{id}/publish` |
-
----
-
-## 💡 Điểm khác biệt so với kiến trúc cũ
-
-| | Expo Router v6 (dự án này) | React Navigation cũ |
-|---|---|---|
-| Routing | File-based (`app/`) | Code-based (`Stack.Screen`) |
-| Params | `useLocalSearchParams()` | `route.params` |
-| Navigate | `router.push('/course/123')` | `navigation.navigate('CourseDetail', {id})` |
-| Deep link | Tự động | Cấu hình thủ công |
-| Type safety | `typedRoutes: true` | Manual |
-| Auth guard | `app/index.tsx` redirect | Navigator wrapper |
