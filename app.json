@@ -19,7 +19,8 @@
       },
       "package": "com.studyhub.app",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "usesCleartextTraffic": true
     },
     "web": {
       "output": "static",
@@ -28,6 +29,7 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
+      "expo-video",
       [
         "expo-splash-screen",
         {
@@ -39,7 +41,8 @@
             "backgroundColor": "#0F172A"
           }
         }
-      ]
+      ],
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true,
